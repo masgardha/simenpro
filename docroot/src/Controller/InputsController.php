@@ -54,8 +54,14 @@ class InputsController extends AppController
         $input = $this->Inputs->newEmptyEntity();
         if ($this->request->is('post')) {
             $param = $this->request->getData();
-//            $stockTables = TableRegistry::getTableLocator()->get('Stocks');
-//            $QueryStocks = $stockTables->get($param['stock_id']);
+            $stockTables = TableRegistry::getTableLocator()->get('Stocks');
+            $stocks = $stockTables->get($param['stock_id']);
+            if (!empty($stocks)) {
+                $stock = $stocks->stocks;
+                $updateStock = $stock + $param['quantity'];
+                $stocks->stocks = $updateStock;
+                $stockTables->save($stocks);
+            }
 
             $input = $this->Inputs->patchEntity($input, $param);
             if ($this->Inputs->save($input)) {

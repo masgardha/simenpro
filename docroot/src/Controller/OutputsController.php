@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\ORM\TableRegistry;
+
 /**
  * Outputs Controller
  *
@@ -51,13 +53,28 @@ class OutputsController extends AppController
     {
         $output = $this->Outputs->newEmptyEntity();
         if ($this->request->is('post')) {
-            $output = $this->Outputs->patchEntity($output, $this->request->getData());
-            if ($this->Outputs->save($output)) {
-                $this->Flash->success(__('The output has been saved.'));
+            $param = $this->request->getData();
+            $stockTables = TableRegistry::getTableLocator()->get('Stocks');
+            $stocks = $stockTables->get($param['stock_id']);
 
-                return $this->redirect(['action' => 'index']);
+            if (!empty($stocks->stocks) && $stocks->stocks <= $param['quantity']) {
+                $stock = $stocks->stocks;
+                $updateStock = $stock - $param['quantity'];
+                $stocks->stocks = $updateStock;
+                $stockTables->save($stocks);
+                $output = $this->Outputs->patchEntity($output, $param);
+                if ($this->Outputs->save($output)) {
+                    $this->Flash->success(__('The output has been saved.'));
+
+                    return $this->redirect(['action' => 'index']);
+                }
+                $this->Flash->error(__('The output could not be saved. Please, try again.'));
+
             }
-            $this->Flash->error(__('The output could not be saved. Please, try again.'));
+            else {
+                $this->Flash->error(__('Opss.. Stock yang kamu miliki '.  $stocks->stocks));
+            }
+
         }
         $stores = $this->Outputs->Stores->find('list', ['limit' => 200])->all();
         $stocks = $this->Outputs->Stocks->find('list', ['limit' => 200])->all();
