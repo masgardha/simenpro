@@ -43,6 +43,36 @@ class UsersController extends AppController
         $this->set(compact('user'));
     }
 
+    /**
+     * Forget password
+     */
+    public function forget()
+    {
+        $userTable = TableRegistry::getTableLocator()->get('Users');
+        $user = $this->Users->newEmptyEntity();
+        if ($this->request->is('post')) {
+            $param = $this->request->getData();
+            $QueryUser = $userTable->find()
+                ->where([
+                    'email' => $param['email']
+                ])->first();
+            if (!empty($QueryUser)) {
+                $QueryUser->password = password_hash($param['Password_Baru'], PASSWORD_DEFAULT);
+                $userTable->save($QueryUser);
+                $this->Flash->success(__('Password berhasil diganti'));
+                return $this->redirect(['action' => 'login']);
+            }
+            else {
+                $this->Flash->error(__('Ganti password gagal'));
+            }
+        }
+        $this->set(compact('user'));
+    }
+
+    /**
+     * Login user.
+     *
+     */
     public function login()
     {
         $user = $this->Users->newEmptyEntity();
@@ -72,9 +102,6 @@ class UsersController extends AppController
     /**
      * View method
      *
-     * @param string|null $id User id.
-     * @return \Cake\Http\Response|null|void Renders view
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
     public function view($id = null)
     {
